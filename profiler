@@ -8,12 +8,15 @@ createFiles() {
 }
 
 checkTemp() {
+    #!gotta fix this to remove temp:
+    vcgencmd measure_temp | sed 's/\(.\)..$/.\1°C/' >> cpu
     paste <(cat /sys/class/thermal/thermal_zone*/temp) | column -s $'\t' -t | sed 's/\(.\)..$/.\1°C/' >> cpu
 }
 checkClock() {
-    echo -n -e "${SECONDS}s\\t" >> cpu
-    vcgencmd measure_clock arm | awk ' BEGIN { FS="=" } ; { printf("%.1fGHz\t", $2 / 1000000000) } ' >> cpu
-}
+    echo -n -e "${SECONDS}s\\t"
+    vcgencmd measure_clock arm | awk ' BEGIN { FS="=" } ; { printf("%.1fGHz\t", $2 / 1000000000) } '
+    mpstat | tail -n +4 | awk '{printf "%s\t", $5}'
+} >> cpu
 
 createFiles
 while [ 50 -ge $NUM ] 
