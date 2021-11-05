@@ -1,0 +1,29 @@
+#!/bin/bash
+
+SECONDS=1
+NUM=0
+
+createFiles() {
+    echo -n '' > cpu && echo -n '' > mem && echo -n '' > gpu
+}
+
+checkTemp() {
+    paste <(cat /sys/class/thermal/thermal_zone*/temp) | column -s $'\t' -t | sed 's/\(.\)..$/.\1°C/' >> cpu
+}
+checkClock() {
+    echo -n -e "${SECONDS}s\\t" >> cpu
+    vcgencmd measure_clock arm | awk ' BEGIN { FS="=" } ; { printf("%.1fGHz\t", $2 / 1000000000) } ' >> cpu
+}
+
+createFiles
+while [ 50 -ge $NUM ] 
+do
+    checkClock
+    checkTemp
+    
+    sleep 1
+    (( NUM++ ))
+done
+
+
+
