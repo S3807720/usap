@@ -4,6 +4,8 @@
 SECONDS=1
 #! Variable to keep loop running, trap kill to end loop
 RUN="Y"
+MEM="mem"
+CPU="cpu"
 
 trap 'RUN="N"' 2
 
@@ -14,23 +16,27 @@ createFiles() {
 
 #! get temps and use trim and sed to format the value appropriately
 checkTemp() {
-    bc -l <<< "scale=2; ($(cat /sys/devices/virtual/thermal/thermal_zone0/temp)/1000)" | tr  '\n' ' '
+    bc -l <<< "scale=2; ($(cat /sys/devices/virtual/thermal/thermal_zone0/temp)/1000)" | tr  '\n' ';'
     vcgencmd measure_temp | sed 's/[^0-9.]*//g'
-} >> cpu
+} >> "$CPU"
 
 #! add seconds, clock speed and cpu usage
 #! use awk to format appropriately and tail to remove unneeded rows
 checkClock() {
-    echo -n -e "${SECONDS}s "
-    vcgencmd measure_clock arm | awk ' BEGIN { FS="=" } ; { printf("clock:%.2f ", $2 / 1000000000) } '
-    mpstat | tail -n +4 | awk '{printf "cpuusage:%s ", $5}'
-} >> cpu
+    echo -n -e "${SECONDS};"
+    vcgencmd measure_clock arm | awk ' BEGIN { FS="=" } ; { printf("%.2f;", $2 / 1000000000) } '
+    mpstat | tail -n +4 | awk '{printf "%s;", $5}'
+} >> "$CPU"
 
 #! save mem stats, removing any string and rounding to decimal with awk
 checkMem() {
     echo -n -e "${SECONDS}s "
     free -m  | grep ^Mem | sed 's/[^0-9 ]*//g' | awk -v c=1000 '{ for (i = 1; i <= NF; ++i)     $i /= c; print }'
-} >> mem
+} >> "$MEM"
+
+createGNUScripts() {
+    awk -F '[\t;]' '{for(i=1; i<=NF; i++) print $i >> "$1-GNU-" i ".txt"}' "$1"
+}
 
 #! initially create files, then run loop while the process is not killed
 #! run all 3 methods and sleep for 1 second between these
@@ -42,6 +48,7 @@ do
     checkMem
     sleep 1
 done
-
+createGNUScripts "$CPU"
+createGNUScripts "$MEM"
 
 
