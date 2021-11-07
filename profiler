@@ -1,29 +1,36 @@
 #!/bin/bash
 
 SECONDS=1
-NUM=0
+RUN="Y"
+
+trap 'RUN="N"' 2
 
 createFiles() {
-    echo -n '' > cpu && echo -n '' > mem && echo -n '' > gpu
+    echo -n '' > cpu && echo -n '' > mem
 }
 
 checkTemp() {
-    #!gotta fix this to remove temp:
-    vcgencmd measure_temp | sed 's/\(.\)..$/.\1°C/' >> cpu
-    paste <(cat /sys/class/thermal/thermal_zone*/temp) | column -s $'\t' -t | sed 's/\(.\)..$/.\1°C/' >> cpu
-}
-checkClock() {
-    echo -n -e "${SECONDS}s\\t"
-    vcgencmd measure_clock arm | awk ' BEGIN { FS="=" } ; { printf("%.1fGHz\t", $2 / 1000000000) } '
-    mpstat | tail -n +4 | awk '{printf "%s\t", $5}'
+    bc -l <<< "scale=2; ($(cat /sys/devices/virtual/thermal/thermal_zone0/temp)/1000)" | tr  '\n' ' '
+    vcgencmd measure_temp | sed 's/[^0-9.]*//g'
 } >> cpu
 
+checkClock() {
+    echo -n -e "${SECONDS}s "
+    vcgencmd measure_clock arm | awk ' BEGIN { FS="=" } ; { printf("clock:%.2f ", $2 / 1000000000) } '
+    mpstat | tail -n +4 | awk '{printf "cpuusage:%s ", $5}'
+} >> cpu
+
+checkMem() {
+    echo -n -e "${SECONDS}s "
+    free | head -2 | tail -1 | sed 's/[^0-9. ]*//g'
+} >> mem
+
 createFiles
-while [ 50 -ge $NUM ] 
+while [ $RUN == "Y" ] 
 do
     checkClock
     checkTemp
-    
+    checkMem
     sleep 1
     (( NUM++ ))
 done
