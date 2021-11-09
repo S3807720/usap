@@ -64,6 +64,6 @@ do
     cpuClock
     cpuUsage
     checkMem
-    sleep 0.5
+    sleep 1
     
 done
