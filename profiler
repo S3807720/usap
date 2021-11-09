@@ -30,7 +30,6 @@ gpuTemp() {
 
 #! add seconds, clock speed and cpu usage
 #! use awk to format appropriately and tail to remove unneeded rows
-
 cpuClock() {
     echo -n -e "${SECONDS} "
     vcgencmd measure_clock arm | awk ' BEGIN { FS="=" } ; { printf("%.2f\n", $2 / 1000000000) }'
@@ -38,7 +37,7 @@ cpuClock() {
 
 cpuUsage() {
     echo -n -e "${SECONDS} "
-    mpstat | tail -n +4 | awk '{printf "%s\n", $5}'
+    mpstat | tail -n +4 | cut -d " " -f 10-
 } >> "$USAGE"
 
 #! save mem stats, removing any string and rounding to decimal with awk
@@ -47,6 +46,8 @@ checkMem() {
     free -m  | grep ^Mem | sed 's/[^0-9 ]*//g' | awk -v c=1000 '{ for (i = 1; i <= NF; ++i ) $i /= c; print }'
 } >> "$MEM"
 
+#! trap the USR1 kill signal and run this method, which ends the loop
+#! and will run any gnuscripts
 killSignal() {
     RUN="N"
 }
@@ -56,7 +57,6 @@ trap 'killSignal' USR1
 #! initially create files, then run loop while the process is not killed
 #! run all methods and sleep for 1 second between these
 createFiles
-
 while [ $RUN == "Y" ] 
 do
     cpuTemp
@@ -64,6 +64,6 @@ do
     cpuClock
     cpuUsage
     checkMem
-    (( SECONDS+=1 ))
+    sleep 0.5
     
 done
