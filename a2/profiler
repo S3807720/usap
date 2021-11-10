@@ -37,19 +37,20 @@ cpuClock() {
 
 cpuUsage() {
     echo -n -e "${SECONDS} "
-    mpstat | tail -n +4 | cut -d " " -f 10-
+    mpstat | tail -n +4 | awk  '{print $3, $5, $6, $12}'
 } >> "$USAGE"
 
 #! save mem stats, removing any string and rounding to decimal with awk
 checkMem() {
     echo -n -e "${SECONDS} "
-    free -m  | grep ^Mem | sed 's/[^0-9 ]*//g' | awk -v c=1000 '{ for (i = 1; i <= NF; ++i ) $i /= c; print }'
+    free -m  | grep ^Mem | awk -v c=1000 '{ for (i = 1; i <= NF; ++i ) $i /= c; print $3, $4, $6, $7 }'
 } >> "$MEM"
 
 #! trap the USR1 kill signal and run this method, which ends the loop
 #! and will run any gnuscripts
 killSignal() {
     RUN="N"
+    gnuplot gnu.p
 }
 
 trap 'killSignal' USR1
@@ -65,5 +66,4 @@ do
     cpuUsage
     checkMem
     sleep 1
-    
 done
