@@ -57,6 +57,7 @@ trap 'killSignal' USR1
 
 #! initially create files, then run loop while the process is not killed
 #! run all methods and sleep for 1 second between these
+cd "$(dirname "${BASH_SOURCE[0]}")"
 createFiles
 while [ $RUN == "Y" ] 
 do
