@@ -8,6 +8,9 @@
 
 You have downloaded my kernel, good job!
 
+Please note, the below instructions are for a Raspberry Pi 4 Model B.
+
+
 To begin you must extract the .tar.gz file.
 First make a new directory with '`mkdir install`'. And '`ls`' to confirm it's created.
 
@@ -61,7 +64,7 @@ After this is done, enter:
 Now we need to move the kernel image over, use the below command to copy the kernel image to your folder, this will transfer over all the settings.
 sudo cp arch/arm/boot/zImage /boot/kernel7l.img
 
-Finally reboot your pi with sudo reboot now, or manually through the graphical window.
+Finally reboot your pi with '`sudo reboot`' now, or manually through the graphical window.
 
 
 ![Copying files to the system](/gnu/3.png)
